@@ -1,16 +1,28 @@
 // CONST
-const FAV_BUTTON_CLASSES = 'prophub-ext-favbtn'
+const EXT_PREFIX = 'prophub-ext'
+const EXT_VERSION = '0.0.1-beta'
 
+const FAV_BUTTON_CLASSES = `${EXT_PREFIX}-favbtn`
+
+
+removeAllFavoriteButton()
+removeListView()
 function removeAllFavoriteButton() {
   document.querySelectorAll(`.${FAV_BUTTON_CLASSES}`)
     .forEach((el) => el.parentNode.removeChild(el))
+}
+
+function removeListView() {
+  document.body.removeChild(
+    document.querySelector(`#${EXT_PREFIX}-list-view`)
+  )
 }
 
 function main() {
   const postElement = document.querySelectorAll('.sc-152o12i-0.iWSTG.i5hg7z-1.dnNQUL')
 
   // Configure
-  const storageName = 'PROPHUB_EXT_FAVPOSTS'
+  const storageName = `${EXT_PREFIX.toUpperCase()}_FAVPOSTS`
 
   // ================================
   // Setup new localStorage key
@@ -18,6 +30,8 @@ function main() {
     localStorage.setItem(storageName, JSON.stringify([]))
   }
 
+  // ###################################
+  // #### Item handling
   // ================================
   // Add new item into localStorage
   function addItem(newItem) {
@@ -25,6 +39,7 @@ function main() {
     tempStorage.push(newItem)
 
     localStorage.setItem(storageName, JSON.stringify(tempStorage))
+    renderList()
   }
 
   function removeItem(itemIndex) {
@@ -32,6 +47,7 @@ function main() {
     tempStorage.splice(itemIndex, 1)
 
     localStorage.setItem(storageName, JSON.stringify(tempStorage))
+    renderList()
   }
 
   function searchItemIndex(itemId) {
@@ -50,6 +66,9 @@ function main() {
     return item
   }
 
+  function getAllItems() {
+    return JSON.parse(localStorage.getItem(storageName))
+  }
   // ###################################
   // #### Favorite button
 
@@ -79,7 +98,7 @@ function main() {
 
       addItem({
         id: parseInt(postId, 10),
-        content: postContent,
+        ...postContent,
       })
     }
 
@@ -132,15 +151,66 @@ function main() {
 
   // ###################################
   // #### LIST VIEW
-
   // ===================================
+
+  let listViewContainer = null
+
+  function renderList() {
+    const listContainer = document.querySelector(`#${EXT_PREFIX}-list-container`)
+    listContainer.innerHTML = ''
+
+    function appendListItem(item) {
+      const listItem = document.createElement('li')
+      const link = document.createElement('a')
+      link.href = item.postUrl
+      link.innerText = item.postName
+
+      listItem.appendChild(link)
+      listContainer.appendChild(listItem)
+    }
+
+    getAllItems().forEach(appendListItem)
+  }
+
   // Create list view
   function createListView() {
-    const listViewContainer = document.createElement('div')
+    // Create DIV container
+    listViewContainer = document.createElement('div')
+    listViewContainer.id = `${EXT_PREFIX}-list-view`
+    listViewContainer.style = `
+      padding: 8px;
+      background: rgb(255 255 255);
+      box-shadow: 0px 2px 6px 1px rgb(0 0 0 / 25%);
+      top: 0px;
+      left: 0px;
+      position: fixed;
+      min-height: 200px;
+      z-index: 1024;
+    `
+
+    // Add heading text node
+    const heading = document.createElement('p')
+    heading.style = 'font-size: 1em; font-weight: bold;'
+    heading.innerText = 'Favorite list'
+
+    listViewContainer.appendChild(heading)
+
+    // Add list container
+    const boxContainer = document.createElement('DIV')
+    const listContainer = document.createElement('ul')
+    listContainer.id = `${EXT_PREFIX}-list-container`
+
+    boxContainer.appendChild(listContainer)
+    listViewContainer.appendChild(boxContainer)
+
+    document.body.appendChild(listViewContainer)
   }
 
   // Start
   initialStorage()
 
   addFavoriteButton()
+
+  createListView()
+  renderList()
 }
